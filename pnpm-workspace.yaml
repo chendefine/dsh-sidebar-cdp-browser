@@ -1,0 +1,4 @@
+allowBuilds:
+  node-pty: false
+minimumReleaseAgeExclude:
+  - dsh-better-sidebar@0.13.0

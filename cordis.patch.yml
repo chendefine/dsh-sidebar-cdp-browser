@@ -1,0 +1,3 @@
+- insert:
+    - id: sidebar-cdp-browser
+      name: 'dsh-sidebar-cdp-browser'

@@ -1,0 +1,305 @@
+.root {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-layer-1);
+  font-family: var(--dsw-font-family, system-ui, sans-serif);
+}
+
+.topRow {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+
+.endpointChip,
+.connectionToolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.endpointChip {
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--dsw-font-mono, ui-monospace, monospace);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settingsPanel input[type='text'] {
+  min-width: 0;
+  height: 27px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  padding: 0 7px;
+}
+
+.settingInput { flex: 1 1 240px; max-width: 320px; font-family: var(--dsw-font-mono, ui-monospace, monospace); }
+
+.connectionToolbar button,
+.statusOverlay button {
+  min-height: 27px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.connectionToolbar button:hover,
+.statusOverlay button:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.connectionDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-tertiary);
+}
+
+.connected { background: var(--dsw-alias-status-success); }
+.opening,
+.connecting,
+.reconnecting { background: var(--dsw-alias-status-warning); }
+.error { background: var(--dsw-alias-status-error); }
+.connectionLabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Target tab strip ── mirrored after the better-sidebar tab bar
+   (.tab / .tabActive / .tabTitle / .tabClose), token-driven. */
+
+.targetTabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.tab {
+  flex: none;
+  max-width: 180px;
+  min-width: 56px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 0 10px;
+  font: var(--dsw-font-xxs-12, 12px system-ui);
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  user-select: none;
+  line-height: 26px;
+}
+
+.tab:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.tabActive {
+  color: var(--dsw-alias-label-primary);
+  /* Native selected fill — no underline, no shadow (Rows .sessionRow.selected). */
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+.tabTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Same shape as better-sidebar's .tabClose (18px square, radius 4). */
+.tabClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  flex: none;
+}
+
+.tabClose:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.tabClose:disabled { opacity: 0.4; cursor: default; }
+
+.newTabButton {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  align-self: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.newTabButton:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.newTabButton:disabled { opacity: 0.4; cursor: default; }
+
+.emptyTabs {
+  padding: 5px 8px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 26px;
+  white-space: nowrap;
+}
+
+/* ── Navigation bar ── mirrored after the built-in sidebar browser
+   (.browserBar / .iconButton / .browserInput), same tokens and metrics. */
+
+.browserBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+  flex: none;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.iconButton:disabled { opacity: 0.4; cursor: default; }
+
+.browserInput {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-xxs-12, 12px system-ui);
+  font-size: 12px;
+}
+
+.browserInput:focus {
+  outline: none;
+  border-color: var(--dsw-alias-border-l2);
+}
+
+.browserInput:disabled { opacity: 0.45; cursor: default; }
+
+.viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-base);
+}
+.canvasWrap { position: relative; width: 100%; height: 100%; }
+.liveCanvas { width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+.liveCanvas:focus-visible { outline: 2px solid var(--dsw-alias-border-focus); outline-offset: -2px; }
+
+/* The keyboard/IME sink: invisible, click-through (focus is programmatic on
+   view click), and it must never scroll or show a caret. */
+.keySink {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  opacity: 0;
+  resize: none;
+  overflow: hidden;
+  pointer-events: none;
+  caret-color: transparent;
+  background: transparent;
+}
+
+.typeHint {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 78%, transparent);
+  border: 1px solid var(--dsw-alias-border-l2);
+  pointer-events: none;
+}
+
+.statusOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  color: var(--dsw-alias-label-secondary);
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 82%, transparent);
+}
+
+.settingsPanel { display: flex; flex-direction: column; gap: 12px; min-width: 320px; padding: 4px; }
+.settingRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.settingRow > span { display: flex; flex-direction: column; gap: 3px; }
+.settingRow small { color: var(--dsw-alias-label-tertiary); max-width: 320px; }
+.settingHint { margin: 0; color: var(--dsw-alias-label-tertiary); font-size: 12px; }
+
+@media (max-width: 520px) {
+  .topRow { align-items: stretch; flex-direction: column; padding: 5px 7px; }
+  .browserBar { flex-wrap: wrap; }
+  .browserInput { order: 2; flex-basis: 100%; }
+  .settingsPanel { min-width: 0; }
+  .settingRow { align-items: stretch; flex-direction: column; }
+}
