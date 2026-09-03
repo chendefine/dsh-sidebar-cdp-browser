@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { closingMessage } from './i18n.ts'
 import {
   decodeMessage,
   encodeCommand,
@@ -101,7 +102,7 @@ export function useCdpSocket(options: UseCdpSocketOptions): CdpSocket {
           if (socketRef.current === socket) socketRef.current = null
           if (disposed) return
           failures += 1
-          setError(event.reason || `Connection closed (${event.code})`)
+          setError(closingMessage(event.code, event.reason))
           if (failures >= 5) { setState('error'); return }
           const delay = Math.min(8_000, 500 * 2 ** Math.min(failures, 4)) + Math.round(Math.random() * 250)
           retryTimer = window.setTimeout(() => { void connect() }, delay)

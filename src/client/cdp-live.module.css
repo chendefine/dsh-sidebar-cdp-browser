@@ -35,17 +35,122 @@
   text-overflow: ellipsis;
 }
 
-.settingsPanel input[type='text'] {
-  min-width: 0;
-  height: 27px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 6px;
-  background: var(--dsw-alias-bg-layer-2);
-  color: var(--dsw-alias-label-primary);
-  padding: 0 7px;
+/* ── Settings panel ── the better-sidebar secondary-settings popup recipe
+   (SideCardSection .popupRow / .typedInputNumber / .switch): each setting a
+   hairline card (l2 border, 12px radius, layer-3 fill), title 14/22 primary
+   + desc 12/18 tertiary left, the control right; compact 76px numeric
+   inputs; the popup-standard 36×20 switch. */
+
+.settingsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 320px;
 }
 
-.settingInput { flex: 1 1 240px; max-width: 320px; font-family: var(--dsw-font-mono, ui-monospace, monospace); }
+.settingRow {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-3);
+  transition: border-color 0.16s, background 0.16s;
+}
+
+.settingRow:hover { border-color: var(--dsw-alias-label-dimmed); }
+
+/* Long free-form values (the endpoint URL) stack: text on top, full-width
+   input below — the same stacked variant dsh-sidebar-vscode uses. */
+.settingRowStack {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.settingText { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.settingTitle { font-size: 14px; line-height: 22px; color: var(--dsw-alias-label-primary); }
+.settingDesc { font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-tertiary); }
+.settingHint { margin: 0; font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-tertiary); }
+
+.settingControl { flex: none; display: flex; align-items: center; gap: 6px; }
+.settingTimes { font-size: 12px; line-height: 18px; color: var(--dsw-alias-label-tertiary); }
+
+.settingInput,
+.settingNumber {
+  box-sizing: border-box;
+  padding: 5px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.settingInput {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  font-family: var(--dsw-font-mono, ui-monospace, monospace);
+}
+
+.settingNumber { width: 76px; }
+
+.settingInput:focus-visible,
+.settingNumber:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.settingNumber[data-invalid='true'] { border-color: var(--dsw-alias-state-error-primary); }
+.settingNumber[data-invalid='true']:focus-visible { outline-color: var(--dsw-alias-state-error-primary); }
+
+/* The popup-standard switch: a visually hidden checkbox (native semantics
+   and focus) driving a styled 36×20 track with a sliding thumb. */
+.settingSwitch { position: relative; display: inline-flex; flex: none; cursor: pointer; }
+.switchInput { position: absolute; width: 1px; height: 1px; margin: 0; opacity: 0; }
+.switchTrack {
+  display: inline-flex;
+  align-items: center;
+  width: 36px;
+  height: 20px;
+  padding: 2px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.switchThumb {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-tertiary);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.settingSwitch:hover .switchTrack { border-color: var(--dsw-alias-label-dimmed); }
+.switchInput:checked + .switchTrack {
+  border-color: var(--dsw-alias-button-primary-fill);
+  background: var(--dsw-alias-button-primary-fill);
+}
+.switchInput:checked + .switchTrack .switchThumb {
+  transform: translateX(16px);
+  background: var(--dsw-alias-bg-layer-3);
+}
+.switchInput:focus-visible + .switchTrack {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
 
 .connectionToolbar button,
 .statusOverlay button {
@@ -70,6 +175,59 @@
   border-radius: 50%;
   background: var(--dsw-alias-label-tertiary);
 }
+
+/* The dot + label cluster the arm switch sits LEFT of. */
+.connectionStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* ── The runtime arm switch (键盘鼠标远程控制) ── control is OFF until this
+   is explicitly checked, even with the plugin's interactive setting on.
+   Grayed + hairline-separated while the master setting is off. */
+.controlToggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 8px;
+  border-right: 1px solid var(--dsw-alias-border-l2);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+}
+
+.controlToggle:hover { color: var(--dsw-alias-label-primary); }
+
+.controlToggle input {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--dsw-alias-button-primary-fill);
+  cursor: pointer;
+}
+
+.controlToggle input:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.controlToggle[data-enabled='false'] {
+  color: var(--dsw-alias-label-dimmed);
+  cursor: default;
+}
+
+.controlToggle[data-enabled='false'] input {
+  cursor: default;
+  opacity: 0.45;
+}
+
 
 .connected { background: var(--dsw-alias-status-success); }
 .opening,
@@ -290,16 +448,11 @@
   background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 82%, transparent);
 }
 
-.settingsPanel { display: flex; flex-direction: column; gap: 12px; min-width: 320px; padding: 4px; }
-.settingRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.settingRow > span { display: flex; flex-direction: column; gap: 3px; }
-.settingRow small { color: var(--dsw-alias-label-tertiary); max-width: 320px; }
-.settingHint { margin: 0; color: var(--dsw-alias-label-tertiary); font-size: 12px; }
-
 @media (max-width: 520px) {
   .topRow { align-items: stretch; flex-direction: column; padding: 5px 7px; }
   .browserBar { flex-wrap: wrap; }
   .browserInput { order: 2; flex-basis: 100%; }
   .settingsPanel { min-width: 0; }
   .settingRow { align-items: stretch; flex-direction: column; }
+  .settingControl { justify-content: flex-start; }
 }

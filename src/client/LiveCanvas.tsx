@@ -3,7 +3,7 @@ import type { KeyInput, MouseInput } from './cdp-api.ts'
 import { createFrameRenderer, type RenderedFrame } from './frame-renderer.ts'
 import { frameSize, type DrawRect } from './geometry.ts'
 import { attachInputBridge, attachKeyboardBridge } from './input-bridge.ts'
-import { t } from './locales.ts'
+import { t } from './i18n.ts'
 import css from './cdp-live.module.css'
 
 export function LiveCanvas(props: {

@@ -1,8 +1,9 @@
 /**
- * End-to-end wiring of the single-endpoint model (v0.3.0), exercised against
+ * End-to-end wiring of the single-endpoint model (v0.1.1), exercised against
  * real loopback HTTP/WS servers up to the CDP dial boundary: the fake
  * settings document (what better-sidebar would serve) flows through the
  * inject seam into the dial address, and a settings commit hot-swaps it.
+ * The config route serves the same seam for the frame-capture overrides.
  *
  * The "fake Chromium" servers answer /json/version with distinguishable
  * errors (404 vs 500) so the WebSocket close reason proves WHICH address the
@@ -23,6 +24,7 @@ describe('single-endpoint live wiring', () => {
   let prefs: Record<string, unknown>
   let eventListener: ((...args: unknown[]) => void) | undefined
   let openRoute: RegisteredRoute | undefined
+  let configRoute: RegisteredRoute | undefined
   let upgradeRoute: UpgradeRoute | undefined
   let chromiumA: Server
   let chromiumB: Server
@@ -31,8 +33,8 @@ describe('single-endpoint live wiring', () => {
    * down the WebSocketServer — upgrades then answer 503 by ws design). */
   const disposers: Array<() => void> = []
 
-  const setEndpoint = (endpoint: string): void => {
-    prefs = { pluginSettings: { 'dsh-sidebar-cdp-browser:live': { endpoint } } }
+  const setPrefs = (blob: Record<string, unknown>): void => {
+    prefs = { pluginSettings: { 'dsh-sidebar-cdp-browser:live': blob } }
   }
 
   beforeAll(async () => {
@@ -44,13 +46,17 @@ describe('single-endpoint live wiring', () => {
       new Promise<void>(resolve => chromiumB.listen(0, '127.0.0.1', () => resolve())),
     ])
 
-    setEndpoint(`http://127.0.0.1:${(chromiumA.address() as { port: number }).port}`)
+    setPrefs({ endpoint: `http://127.0.0.1:${(chromiumA.address() as { port: number }).port}` })
     face = { settings: { get: (ns: string) => (ns === 'dsh-better-sidebar' ? prefs : undefined) } }
 
     let injected: ((face: FakeFace) => void) | undefined
     const ctx: CdpLiveHostContext = {
       webServer: {
-        register: route => { if (route.path === HTTP_ROUTES.open) openRoute = route; return () => {} },
+        register: route => {
+          if (route.path === HTTP_ROUTES.open) openRoute = route
+          if (route.path === HTTP_ROUTES.config) configRoute = route
+          return () => {}
+        },
         registerUpgrade: route => { upgradeRoute = route; return () => {} },
       },
       sessions: { get: id => (id === 's1' ? {} : undefined) },
@@ -63,9 +69,11 @@ describe('single-endpoint live wiring', () => {
     expect(injected).toBeTypeOf('function')
     injected?.(face)
     expect(upgradeRoute).toBeDefined()
+    expect(configRoute).toBeDefined()
 
     server = createServer((req, res) => {
       if (openRoute !== undefined && req.url === HTTP_ROUTES.open) void openRoute.handler(req, res)
+      else if (configRoute !== undefined && req.url === HTTP_ROUTES.config) void configRoute.handler(req, res)
       else res.writeHead(404).end()
     })
     server.on('upgrade', (req, socket, head) => { upgradeRoute?.handler(req, socket, head) })
@@ -105,10 +113,34 @@ describe('single-endpoint live wiring', () => {
   }, 20_000)
 
   it('hot-swaps the dial address when the settings document changes', async () => {
-    setEndpoint(`http://127.0.0.1:${(chromiumB.address() as { port: number }).port}`)
+    setPrefs({ endpoint: `http://127.0.0.1:${(chromiumB.address() as { port: number }).port}` })
     eventListener?.('dsh-better-sidebar', 2)
     await new Promise(resolve => setTimeout(resolve, 50))
     const outcome = await dialOnce()
     expect(outcome.reason).toContain('CDP discovery failed with HTTP 500')
   }, 20_000)
+
+  /** Fetch the effective frame config through the config route. */
+  async function fetchFrame(): Promise<Record<string, number>> {
+    const body = await fetch(`${base}${HTTP_ROUTES.config}`, { headers: { accept: 'application/json' } })
+      .then(r => r.json() as Promise<{ ok: boolean; value: { frame: Record<string, number> } }>)
+    expect(body.ok).toBe(true)
+    return body.value.frame
+  }
+
+  it('serves the effective frame config (loader defaults) on the config route', async () => {
+    expect(await fetchFrame()).toEqual({ frameQuality: 60, frameEveryNth: 1, frameMaxWidth: 1280, frameMaxHeight: 900 })
+    // The trust fence guards the read-only route too.
+    const denied = await fetch(`${base}${HTTP_ROUTES.config}`, { headers: { origin: 'https://evil.example', 'sec-fetch-site': 'cross-site' } })
+    expect(denied.status).toBe(403)
+  })
+
+  it('merges web-UI frame overrides over the loader config per key', async () => {
+    setPrefs({ frameQuality: 40, frameMaxHeight: 1080, frameEveryNth: 999, endpoint: '127.0.0.1:9222' })
+    eventListener?.('dsh-better-sidebar', 3)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    // Valid overrides win; the out-of-range frameEveryNth keeps the base 1;
+    // the untouched frameMaxWidth keeps the loader default.
+    expect(await fetchFrame()).toEqual({ frameQuality: 40, frameEveryNth: 1, frameMaxWidth: 1280, frameMaxHeight: 1080 })
+  })
 })

@@ -139,8 +139,8 @@ export interface KeyboardBridgeOptions {
 /**
  * Bridge keyboard input to CDP through two cooperating paths:
  *
- * 1. CAPTURE-PHASE WINDOW LISTENERS for keydown/keyup. This is the fix for the
- *    v0.1.3 "cannot type" bug: the hidden sink's programmatic focus is fragile
+ * 1. CAPTURE-PHASE WINDOW LISTENERS for keydown/keyup. This is the v0.1.1
+ *    fix for the v0.1.0 "cannot type" bug: the hidden sink's programmatic focus is fragile
  *    (browsers may refuse or immediately move focus for a 1px,
  *    pointer-events:none textarea inside an overflow-hidden container, and the
  *    click itself re-targets focus to the canvas). A capture listener on

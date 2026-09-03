@@ -10,7 +10,7 @@ import { TargetTabStrip } from './TargetTabStrip.tsx'
 import { BrowserToolbar } from './BrowserToolbar.tsx'
 import { LiveCanvas } from './LiveCanvas.tsx'
 import { StatusOverlay } from './StatusOverlay.tsx'
-import { t } from './locales.ts'
+import { t } from './i18n.ts'
 import css from './cdp-live.module.css'
 
 export function SidebarCdpBrowser(props: TabComponentProps) {
@@ -23,7 +23,20 @@ export function SidebarCdpBrowser(props: TabComponentProps) {
 
   // The endpoint lives in the host (read from the same UI setting); the
   // client just opens a ticket and the host dials the current address.
-  const mode: 'observe' | 'interactive' = settings.interactive ? 'interactive' : 'observe'
+  //
+  // Two-stage control gate: the plugin setting 交互输入 is the master
+  // permission, and the title-bar checkbox 键盘鼠标远程控制 is the runtime
+  // arm switch (unchecked by default, so a fresh view is ALWAYS view-only).
+  // The session mode — and with it the host-side requireInteractive() gate —
+  // only turns interactive when BOTH are on; toggling either reconnects with
+  // the new mode (the same proven flow an endpoint change uses).
+  const interactiveAllowed = settings.interactive
+  const [armedInput, setArmedInput] = useState(false)
+  const armed = interactiveAllowed && armedInput
+  // Disarming must persist: turning the master setting off clears the box so
+  // re-enabling the setting later does not silently re-arm control.
+  useEffect(() => { if (!interactiveAllowed) setArmedInput(false) }, [interactiveAllowed])
+  const mode: 'observe' | 'interactive' = armed ? 'interactive' : 'observe'
   const onMessage = useCallback((message: ServerMessage) => {
     if (message.type === 'ready' || message.type === 'targets.changed') targets.replace(message.targets)
     else if (message.type === 'target.closed') targets.remove(message.targetKey)
@@ -78,7 +91,12 @@ export function SidebarCdpBrowser(props: TabComponentProps) {
   return <div className={css.root} data-sidebar-cdp-browser="">
     <div className={css.topRow}>
       <span className={css.endpointChip} title={t('endpoint')}>{settings.endpoint.trim() === '' ? DEFAULT_ENDPOINT_DISPLAY : settings.endpoint.trim()}</span>
-      <ConnectionToolbar state={socket.state} error={socket.error} onReconnect={socket.reconnect} />
+      <ConnectionToolbar
+        state={socket.state}
+        error={socket.error}
+        onReconnect={socket.reconnect}
+        remoteControl={{ enabled: interactiveAllowed, checked: armed, onChange: setArmedInput }}
+      />
     </div>
     <TargetTabStrip
       targets={targets.targets}

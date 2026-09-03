@@ -1,4 +1,5 @@
 import { Config, resolveCdpLiveConfig, type CdpLiveConfig } from './config.ts'
+import { readFrameOverrides, resolveFrameValues, sameFrameValues, type FrameFieldOverrides, type FrameFieldValues } from './frame-settings.ts'
 import { CdpLiveSession } from './cdp/live-session.ts'
 import { EndpointManager } from './cdp/endpoint-manager.ts'
 import { createHttpHandlers, createTicketRegistry, HTTP_ROUTES, type HttpRequest, type HttpResponse } from './routes/http.ts'
@@ -37,13 +38,19 @@ export interface CdpLiveHostContext {
 export function apply(ctx: CdpLiveHostContext, rawConfig?: CdpLiveConfig): void {
   const config = resolveCdpLiveConfig(rawConfig)
   const tickets = createTicketRegistry(config.ticketTtlMs)
-  // The endpoint source: better-sidebar's prefs document, where the web UI
+  // The settings source: better-sidebar's prefs document, where the web UI
   // ("Side card → 侧边栏内容 → CDP实时视图") persists pluginSettings. Until the
-  // settings service mounts (or when better-sidebar is absent) the raw value
-  // stays empty and the manager dials the default loopback address.
-  let readUiEndpoint: () => string = (): string => ''
-  const endpoints = new EndpointManager(config, () => readUiEndpoint())
-  const session = new CdpLiveSession(config, endpoints)
+  // settings service mounts (or when better-sidebar is absent) the raw values
+  // stay empty and the manager dials the default loopback address while the
+  // frame params keep their loader-config values.
+  let readUiSettings: () => Record<string, unknown> = (): Record<string, unknown> => ({})
+  const readUiEndpoint = (): string => {
+    const raw = readUiSettings().endpoint
+    return typeof raw === 'string' ? raw : ''
+  }
+  const readUiFrameOverrides = (): FrameFieldOverrides => readFrameOverrides(readUiSettings())
+  const endpoints = new EndpointManager(config, readUiEndpoint)
+  const session = new CdpLiveSession(config, endpoints, readUiFrameOverrides)
   const loggingSession: CdpSession = {
     attach: (claims, ws) => session.attach(claims, ws).catch(error => {
       // Surface attach failures in the host log: the client only sees the
@@ -60,29 +67,39 @@ export function apply(ctx: CdpLiveHostContext, rawConfig?: CdpLiveConfig): void 
   const handlers = createHttpHandlers({
     tickets,
     hasSession: sessionId => ctx.sessions.get(sessionId) !== undefined,
+    frameConfig: (): FrameFieldValues => resolveFrameValues(config, readUiFrameOverrides()),
   }, ctx.webRuntime.trustedHosts)
   const ws = createCdpWebSocketRoute(tickets, loggingSession, ctx.webRuntime.trustedHosts)
 
   ctx.inject?.(['settings'], (face) => {
-    readUiEndpoint = (): string => {
+    readUiSettings = (): Record<string, unknown> => {
       const ns = face.settings.get(SIDEBAR_PREFS_NS) as {
         pluginSettings?: Record<string, Record<string, unknown>>
       } | undefined
-      const raw = ns?.pluginSettings?.[LIVE_TAB_ID]?.endpoint
-      return typeof raw === 'string' ? raw : ''
+      return ns?.pluginSettings?.[LIVE_TAB_ID] ?? {}
     }
-    // A settings commit may have moved the endpoint: drop the stale browser
-    // connection and bounce the attached clients so they reconnect (the
-    // client's backoff loop re-opens a ticket against the new address).
+    // The last frame config this host acted on (change detection below).
+    let lastFrame = resolveFrameValues(config, readUiFrameOverrides())
+    // A settings commit may have moved the endpoint or the frame-capture
+    // params: drop the stale browser connection / bounce the attached
+    // clients so they reconnect (the client's backoff loop re-opens a
+    // ticket and re-selects its target with the fresh values).
     ctx.on?.('settings/document-updated', (...args: unknown[]) => {
       if (args[0] !== SIDEBAR_PREFS_NS) return
       void endpoints.applyEndpointChange()
-        .then(changed => { if (changed) session.restart('cdp endpoint changed') })
+        .then((endpointChanged) => {
+          const nextFrame = resolveFrameValues(config, readUiFrameOverrides())
+          const frameChanged = !sameFrameValues(lastFrame, nextFrame)
+          lastFrame = nextFrame
+          if (endpointChanged) session.restart('cdp endpoint changed')
+          else if (frameChanged) session.restart('cdp frame settings changed')
+        })
         .catch(() => undefined)
     })
   })
 
   ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: HTTP_ROUTES.open, handler: handlers.open }), 'dsh-sidebar-cdp-browser: open route')
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: HTTP_ROUTES.config, handler: handlers.config }), 'dsh-sidebar-cdp-browser: config route')
   ctx.effect(() => ctx.webServer.registerUpgrade({ path: WEBSOCKET_ROUTE, handler: ws.handle }), 'dsh-sidebar-cdp-browser: websocket route')
   ctx.effect(() => () => {
     tickets.clear()

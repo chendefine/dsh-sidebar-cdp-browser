@@ -1,6 +1,6 @@
 import type { TargetDescriptor } from './cdp-api.ts'
 import { IconCloseFill14, IconPlusOutline16 } from './icons.tsx'
-import { t } from './locales.ts'
+import { t } from './i18n.ts'
 import css from './cdp-live.module.css'
 
 /**

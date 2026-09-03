@@ -9,7 +9,7 @@ import { resolveCdpLiveConfig } from '../src/config.ts'
 const ENDPOINT = process.env.CDP_PROBE_ENDPOINT ?? 'http://192.168.254.200:9223'
 
 test.skipIf(process.env.CDP_PROBE !== '1')('host path against a live remote Chromium', { timeout: 30_000 }, async () => {
-  // v0.3.0: the single endpoint comes from the (UI) source.
+  // v0.1.1: the single endpoint comes from the (UI) source.
   const config = resolveCdpLiveConfig({})
   const endpoints = new EndpointManager(config, () => ENDPOINT)
   try {
@@ -28,11 +28,11 @@ test.skipIf(process.env.CDP_PROBE !== '1')('host path against a live remote Chro
     await managed.manager.input.dispatchKey(targets[0]!.key, { type: 'keyUp', key: 'a', code: 'KeyA', windowsVirtualKeyCode: 65 })
     await managed.manager.input.insertText(targets[0]!.key, '你好')
     console.log('live keyboard: key events + insertText accepted')
-    // target lifecycle (v0.2.0): create a tab, watch its registry entry appear
+    // target lifecycle (v0.1.1): create a tab, watch its registry entry appear
     // with a real title after navigation, then close it and watch it drop.
     const createdKey = await managed.manager.createTarget()
     expect(managed.manager.registry.list().some(t => t.key === createdKey)).toBe(true)
-    // Viewport (v0.2.2): puppeteer's connect() defaultViewport (800x600) used
+    // Viewport (v0.1.1): puppeteer's connect() defaultViewport (800x600) used
     // to be applied to every newPage — new tabs rendered narrow. With the
     // null override a fresh tab must match the browser's natural window size,
     // i.e. the same device width the pre-existing tab screencasts at.
@@ -47,7 +47,7 @@ test.skipIf(process.env.CDP_PROBE !== '1')('host path against a live remote Chro
     // the title-only TargetInfo update: the commit event carries the URL with
     // a TENTATIVE title ("baidu.com"), and the real document title is only
     // observable via Target.getTargets commands — refreshTargetInfoNow/the
-    // poll must fetch it (the bug fixed in 0.2.3). example.com is useless
+    // poll must fetch it (the bug fixed in 0.1.1). example.com is useless
     // here: its title happens to arrive with the commit event.
     await managed.manager.input.navigate(createdKey, 'https://www.baidu.com/')
     await expect.poll(async () => managed.manager.registry.list().find(t => t.key === createdKey)?.title, { timeout: 15_000 })

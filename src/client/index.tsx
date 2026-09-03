@@ -1,11 +1,16 @@
 import { createElement } from 'react'
-import type {} from 'dsh-better-sidebar/client/service'
-import type { Context } from 'cordis'
+// Context comes from the better-sidebar root (v0.17.x): the package no longer
+// augments the standalone 'cordis' Context — it re-exports its own
+// cordis-base & service-shape intersection with `betterSidebar` on it.
+import type { Context } from 'dsh-better-sidebar'
 import { SidebarCdpBrowser } from './SidebarCdpBrowser.tsx'
 import { SettingsPanel } from './settings.tsx'
-import { t } from './locales.ts'
+import { attachLocale, t } from './i18n.ts'
 
-export const inject = ['betterSidebar']
+/** Services required before mounting: the sidebar registry (tab + settings
+ *  panel) and the DSH locale service (zh/en copy follows the host-backed
+ *  language preference instead of the raw browser language). */
+export const inject = ['betterSidebar', 'locale']
 
 function LiveIcon(props: { size?: number }) {
   const size = props.size ?? 16
@@ -15,6 +20,7 @@ function LiveIcon(props: { size?: number }) {
 }
 
 export function apply(ctx: Context): void {
+  ctx.effect(() => attachLocale(ctx.locale), 'dsh-sidebar-cdp-browser: locale dictionaries')
   ctx.effect(() => ctx.betterSidebar.registerTab({
     id: 'dsh-sidebar-cdp-browser:live',
     title: () => t('title'),

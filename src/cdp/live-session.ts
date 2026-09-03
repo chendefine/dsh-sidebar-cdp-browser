@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import type { RawData, WebSocket } from 'ws'
 import type { ResolvedCdpLiveConfig } from '../config.ts'
+import { resolveFrameValues, type FrameFieldOverrides, type FrameFieldValues } from '../frame-settings.ts'
 import type { TicketClaims } from '../routes/http.ts'
 import { encodeServerMessage, parseJsonClientRequest, PROTOCOL_VERSION, type ClientRequest } from './protocol.ts'
 import { EndpointManager } from './endpoint-manager.ts'
@@ -11,14 +12,28 @@ export interface LiveCdpSession {
   close(): Promise<void>
 }
 
+/**
+ * Where the frame-capture overrides come from: the web-UI settings document
+ * (read lazily, so a commit applies without a plugin reload). Absent keys
+ * fall back to the loader config; see frame-settings.ts.
+ */
+export type FrameSource = () => FrameFieldOverrides
+
 export class CdpLiveSession implements LiveCdpSession {
   readonly #config: ResolvedCdpLiveConfig
   readonly #endpoints: EndpointManager
+  readonly #frameSource: FrameSource
   readonly #sockets = new Set<WebSocket>()
 
-  constructor(config: ResolvedCdpLiveConfig, endpoints = new EndpointManager(config)) {
+  constructor(config: ResolvedCdpLiveConfig, endpoints = new EndpointManager(config), frameSource: FrameSource = () => ({})) {
     this.#config = config
     this.#endpoints = endpoints
+    this.#frameSource = frameSource
+  }
+
+  /** The frame-capture params a NEW screencast would start with right now. */
+  get frameConfig(): FrameFieldValues {
+    return resolveFrameValues(this.#config, this.#frameSource())
   }
 
   /**
@@ -87,12 +102,16 @@ export class CdpLiveSession implements LiveCdpSession {
       manager.registry.resolve(key)
       manager.leases.acquire(key, owner, 60_000)
       selected = key
+      // Resolved per start (not per plugin load): the UI frame overrides are
+      // read through the source, so a settings commit reaches the next
+      // screencast after the reconnect nudge it triggers.
+      const frame = this.frameConfig
       const queue = await manager.screencast.start(key, {
         format: 'jpeg',
-        quality: this.#config.frameQuality,
-        maxWidth: this.#config.frameMaxWidth,
-        maxHeight: this.#config.frameMaxHeight,
-        everyNthFrame: this.#config.frameEveryNth,
+        quality: frame.frameQuality,
+        maxWidth: frame.frameMaxWidth,
+        maxHeight: frame.frameMaxHeight,
+        everyNthFrame: frame.frameEveryNth,
       })
       framePump = (async () => {
         for await (const frame of queue) {

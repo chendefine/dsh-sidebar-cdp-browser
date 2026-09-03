@@ -1,7 +1,7 @@
 /** jsdom-level check of the keyboard sink mechanics: the exact DOM shape
  *  LiveCanvas renders (wrap > canvas + hidden textarea with
  *  pointer-events:none / tabIndex:-1), driven with real DOM events — the
- *  layer the v0.1.3 focus bug lived in. */
+ *  layer the v0.1.0 focus bug lived in. */
 import { describe, expect, it } from 'vitest'
 import { JSDOM } from 'jsdom'
 

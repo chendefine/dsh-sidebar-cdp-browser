@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { z } from 'zod'
 import { isTrustedRequest } from '../trust-fence.ts'
+import type { FrameFieldValues } from '../frame-settings.ts'
 
 export interface HttpRequest {
   method?: string
@@ -90,6 +91,12 @@ function send(res: HttpResponse, status: number, value: unknown): void {
 export interface HttpRouteDeps {
   tickets: TicketRegistry
   hasSession(sessionId: string): boolean
+  /**
+   * The frame-capture values in effect RIGHT NOW (loader config merged with
+   * the web-UI overrides) — served to the settings panel so unset fields
+   * display the real effective value, never a misleading code default.
+   */
+  frameConfig(): FrameFieldValues
 }
 
 export function createHttpHandlers(deps: HttpRouteDeps, trustedHosts: readonly string[] = []) {
@@ -114,9 +121,17 @@ export function createHttpHandlers(deps: HttpRouteDeps, trustedHosts: readonly s
         return send(res, 400, { ok: false, error: { code: 'bad-request', message: error instanceof Error ? error.message : 'invalid request' } })
       }
     },
+
+    /** Read-only: the effective frame-capture config for the settings panel. */
+    async config(req: HttpRequest, res: HttpResponse): Promise<void> {
+      if (!isTrustedRequest(req, trustedHosts)) return send(res, 403, { ok: false, error: { code: 'forbidden', message: 'forbidden' } })
+      if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, { ok: false, error: { code: 'method', message: 'method not allowed' } })
+      return send(res, 200, { ok: true, value: { frame: deps.frameConfig() } })
+    },
   }
 }
 
 export const HTTP_ROUTES = {
   open: '/dsh-cdp-live/api/open',
+  config: '/dsh-cdp-live/api/config',
 } as const

@@ -1,10 +1,11 @@
 /**
- * The single-endpoint model (v0.3.0): the address comes from a source (the
+ * The single-endpoint model (v0.1.1): the address comes from a source (the
  * web-UI setting) instead of a profile list, and /open issues tickets
  * without profile claims.
  */
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_CDP_ENDPOINT, resolveCdpLiveConfig } from '../src/config.ts'
+import { defaultFrameValues } from '../src/frame-settings.ts'
 import { EndpointManager } from '../src/cdp/endpoint-manager.ts'
 import { createHttpHandlers, createTicketRegistry, type HttpRequest, type HttpResponse } from '../src/routes/http.ts'
 
@@ -56,6 +57,7 @@ describe('open route (single endpoint)', () => {
   const handlers = createHttpHandlers({
     tickets,
     hasSession: sessionId => sessionId === 'live-session',
+    frameConfig: defaultFrameValues,
   })
 
   it('issues a ticket without profile claims', async () => {

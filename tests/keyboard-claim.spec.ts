@@ -1,4 +1,4 @@
-/** Regression tests for the v0.1.3 "cannot type" bug: the capture-phase
+/** Regression tests for the v0.1.0 "cannot type" bug (fixed in v0.1.1): the capture-phase
  *  window listeners must fire regardless of which element holds focus, and
  *  must stay silent when the user is typing into another DSH surface. */
 import { describe, expect, it, vi } from 'vitest'
@@ -31,7 +31,7 @@ function setup(active: boolean) {
   return { dom, win, globalWin, previous, sink, chat, input, keys, texts, dispose }
 }
 
-describe('capture-phase keyboard claim (v0.1.3 regression)', () => {
+describe('capture-phase keyboard claim (v0.1.0 regression, fixed in v0.1.1)', () => {
   it('delivers keys even though focus never reached the sink', () => {
     const ctx = setup(true)
     try {

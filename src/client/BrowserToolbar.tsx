@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type Ref } from 'react'
 import { IconChevronLeftOutline14, IconChevronRightOutline14, IconLinkOutline14, IconRefreshOutline14 } from './icons.tsx'
-import { t } from './locales.ts'
+import { t } from './i18n.ts'
 import css from './cdp-live.module.css'
 
 /**

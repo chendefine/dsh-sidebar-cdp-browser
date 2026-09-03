@@ -1,5 +1,5 @@
 import type { ConnectionState } from './cdp-api.ts'
-import { t } from './locales.ts'
+import { t } from './i18n.ts'
 import css from './cdp-live.module.css'
 
 export function StatusOverlay(props: { visible: boolean; state: ConnectionState; hasTarget: boolean; hasFrame: boolean; error?: string; onRetry(): void }) {
