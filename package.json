@@ -4,6 +4,29 @@
   "description": "DSH better-sidebar plugin for secure Chromium CDP live viewing and control.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chendefine/dsh-sidebar-cdp-browser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chendefine/dsh-sidebar-cdp-browser/issues"
+  },
+  "homepage": "https://github.com/chendefine/dsh-sidebar-cdp-browser#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "better-sidebar",
+    "cdp",
+    "chromium",
+    "puppeteer",
+    "screencast",
+    "remote-control"
+  ],
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
   "exports": {
